@@ -7,22 +7,19 @@ function isValidId(id) {
 }
 
 /**
- * POST /api/posts
- * Criar post (rascunho ou publicado)
+ * POST /posts
  */
 export async function createPost(req, res) {
   try {
     const db = await getDb();
     const payload = buildPostPayload(req.body);
 
-    // validações mínimas
     if (!payload.title || !payload.slug || !payload.content) {
       return res.status(400).json({
         error: "Título, slug e conteúdo são obrigatórios",
       });
     }
 
-    // slug único
     const exists = await db.collection("blogposts").findOne({
       slug: payload.slug,
       deletedAt: null,
@@ -45,7 +42,7 @@ export async function createPost(req, res) {
 }
 
 /**
- * GET /api/posts
+ * GET /posts
  */
 export async function getAllPosts(req, res) {
   try {
@@ -53,10 +50,7 @@ export async function getAllPosts(req, res) {
 
     const posts = await db
       .collection("blogposts")
-      .find({
-        published: true,
-        deletedAt: null,
-      })
+      .find({ published: true, deletedAt: null })
       .sort({ publishedAt: -1 })
       .toArray();
 
@@ -68,11 +62,41 @@ export async function getAllPosts(req, res) {
 }
 
 /**
- * GET /api/posts/slug/:slug
+ * GET /posts/:id
+ */
+export async function getPostById(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!isValidId(id)) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const db = await getDb();
+
+    const post = await db.collection("blogposts").findOne({
+      _id: new ObjectId(id),
+      published: true,
+      deletedAt: null,
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: "Post não encontrado" });
+    }
+
+    return res.status(200).json(post);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao buscar post" });
+  }
+}
+
+/**
+ * GET /posts/slug/:slug
  */
 export async function getPostBySlug(req, res) {
   try {
-    const { slug } = req.query;
+    const { slug } = req.params;
     const db = await getDb();
 
     const post = await db.collection("blogposts").findOne({

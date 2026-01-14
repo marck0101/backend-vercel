@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getAllPosts,
+  getPostById,
   getPostBySlug,
   createPost,
 } from "../controllers/PostController.js";
@@ -18,12 +19,13 @@ router.get("/", getAllPosts);
 router.post("/", createPost);
 
 /**
+ * GET /posts/:id
+ */
+router.get("/:id", getPostById);
+
+/**
  * GET /posts/slug/:slug
  */
-router.get("/slug/:slug", (req, res) => {
-  // espelha o comportamento da Vercel (req.query)
-  req.query.slug = req.params.slug;
-  return getPostBySlug(req, res);
-});
+router.get("/slug/:slug", getPostBySlug);
 
 export default router;
