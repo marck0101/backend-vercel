@@ -1,21 +1,29 @@
 import express from "express";
 import {
   getAllPosts,
-  getPostById,
-  getTrashedPosts,
-  trashPost,
-  restorePost,
+  getPostBySlug,
+  createPost,
 } from "../controllers/PostController.js";
 
 const router = express.Router();
 
-// públicos
+/**
+ * GET /posts
+ */
 router.get("/", getAllPosts);
-router.get("/:id", getPostById);
 
-// trash
-router.get("/trash/list", getTrashedPosts);
-router.patch("/trash/:id", trashPost);
-router.patch("/restore/:id", restorePost);
+/**
+ * POST /posts
+ */
+router.post("/", createPost);
+
+/**
+ * GET /posts/slug/:slug
+ */
+router.get("/slug/:slug", (req, res) => {
+  // espelha o comportamento da Vercel (req.query)
+  req.query.slug = req.params.slug;
+  return getPostBySlug(req, res);
+});
 
 export default router;

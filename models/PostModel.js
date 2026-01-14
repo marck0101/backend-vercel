@@ -1,15 +1,26 @@
-import { getDb } from "../lib/mongodb.js";
+export function buildPostPayload(data) {
+  const now = new Date();
 
-export async function findAllPosts() {
-  const db = await getDb();
-  return db
-    .collection("blogposts")
-    .find({ published: true })
-    .sort({ publishedAt: -1 })
-    .toArray();
-}
+  return {
+    title: data.title,
+    slug: data.slug,
+    excerpt: data.excerpt,
+    content: data.content,
+    category: data.category,
 
-export async function findPostBySlug(slug) {
-  const db = await getDb();
-  return db.collection("blogposts").findOne({ slug });
+    seo: {
+      title: data.seo?.title || "",
+      description: data.seo?.description || "",
+    },
+
+    gallery: Array.isArray(data.gallery) ? data.gallery : [],
+    coverImage: data.coverImage || "",
+
+    published: Boolean(data.published),
+    publishedAt: data.published ? now : null,
+
+    createdAt: now,
+    updatedAt: null,
+    deletedAt: null,
+  };
 }

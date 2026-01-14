@@ -1,9 +1,16 @@
-import { getAllPosts } from "../../controllers/PostController.js";
+import {
+  getAllPosts,
+  createPost,
+} from "../../controllers/PostController.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).end();
+  if (req.method === "GET") {
+    return getAllPosts(req, res);
   }
 
-  return getAllPosts(req, res);
+  if (req.method === "POST") {
+    return createPost(req, res);
+  }
+
+  return res.status(405).end();
 }

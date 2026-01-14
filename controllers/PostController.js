@@ -1,12 +1,51 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "../lib/mongodb.js";
+import { buildPostPayload } from "../models/PostModel.js";
 
 function isValidId(id) {
   return ObjectId.isValid(id);
 }
 
 /**
- * GET /posts
+ * POST /api/posts
+ * Criar post (rascunho ou publicado)
+ */
+export async function createPost(req, res) {
+  try {
+    const db = await getDb();
+    const payload = buildPostPayload(req.body);
+
+    // validações mínimas
+    if (!payload.title || !payload.slug || !payload.content) {
+      return res.status(400).json({
+        error: "Título, slug e conteúdo são obrigatórios",
+      });
+    }
+
+    // slug único
+    const exists = await db.collection("blogposts").findOne({
+      slug: payload.slug,
+      deletedAt: null,
+    });
+
+    if (exists) {
+      return res.status(409).json({ error: "Slug já em uso" });
+    }
+
+    const result = await db.collection("blogposts").insertOne(payload);
+
+    return res.status(201).json({
+      success: true,
+      postId: result.insertedId,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao criar post" });
+  }
+}
+
+/**
+ * GET /api/posts
  */
 export async function getAllPosts(req, res) {
   try {
@@ -29,20 +68,15 @@ export async function getAllPosts(req, res) {
 }
 
 /**
- * GET /posts/:id
+ * GET /api/posts/slug/:slug
  */
-export async function getPostById(req, res) {
+export async function getPostBySlug(req, res) {
   try {
-    const { id } = req.query;
-
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: "ID inválido" });
-    }
-
+    const { slug } = req.query;
     const db = await getDb();
 
     const post = await db.collection("blogposts").findOne({
-      _id: new ObjectId(id),
+      slug,
       published: true,
       deletedAt: null,
     });
@@ -55,86 +89,5 @@ export async function getPostById(req, res) {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Erro ao buscar post" });
-  }
-}
-
-/**
- * GET /posts/trash
- */
-export async function getTrashedPosts(req, res) {
-  try {
-    const db = await getDb();
-
-    const posts = await db
-      .collection("blogposts")
-      .find({
-        deletedAt: { $ne: null },
-      })
-      .sort({ deletedAt: -1 })
-      .toArray();
-
-    return res.status(200).json(posts);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro ao buscar lixeira" });
-  }
-}
-
-/**
- * PATCH /posts/trash/:id
- */
-export async function trashPost(req, res) {
-  try {
-    const { id } = req.query;
-
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: "ID inválido" });
-    }
-
-    const db = await getDb();
-
-    await db.collection("blogposts").updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          deletedAt: new Date(),
-          published: false,
-        },
-      }
-    );
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro ao mover para lixeira" });
-  }
-}
-
-/**
- * PATCH /posts/restore/:id
- */
-export async function restorePost(req, res) {
-  try {
-    const { id } = req.query;
-
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: "ID inválido" });
-    }
-
-    const db = await getDb();
-
-    await db.collection("blogposts").updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          deletedAt: null,
-        },
-      }
-    );
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro ao restaurar post" });
   }
 }
