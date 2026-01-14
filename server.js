@@ -17,6 +17,7 @@ app.use(
     origin: [
       "http://localhost:5173", // frontend local
       "http://localhost:3000",
+      "https://blog.marck0101.com.br/",
     ],
   })
 );
