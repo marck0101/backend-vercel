@@ -19,13 +19,13 @@ router.get("/", getAllPosts);
 router.post("/", createPost);
 
 /**
- * GET /posts/:id
- */
-router.get("/:id", getPostById);
-
-/**
- * GET /posts/slug/:slug
+ * ROTAS ESPECÍFICAS PRIMEIRO
  */
 router.get("/slug/:slug", getPostBySlug);
+
+/**
+ * ROTA GENÉRICA POR ÚLTIMO
+ */
+router.get("/:id", getPostById);
 
 export default router;
