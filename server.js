@@ -7,9 +7,7 @@ import postsRoutes from "./routes/posts.js";
 const app = express();
 const PORT = process.env.PORT || 3333;
 
-/**
- * Middlewares
- */
+/* ================= MIDDLEWARES ================= */
 app.use(express.json());
 
 app.use(
@@ -22,25 +20,18 @@ app.use(
   })
 );
 
-/**
- * Health check
- */
+/* ================= HEALTH ================= */
 app.get("/status", (req, res) => {
-  return res.status(200).json({
+  res.json({
     status: "ok",
-    service: "backend-express",
     timestamp: new Date().toISOString(),
   });
 });
 
-/**
- * API ROUTES (🔥 AQUI ESTAVA O PROBLEMA)
- */
+/* ================= API ================= */
 app.use("/api/posts", postsRoutes);
 
-/**
- * Start server
- */
+/* ================= START ================= */
 app.listen(PORT, () => {
   console.log(`🚀 API rodando em http://localhost:${PORT}`);
 });
