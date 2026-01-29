@@ -16,13 +16,15 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://blog.marck0101.com.br",
-      "*" // temporário para testes; remova depois se quiser
+      "http://localhost:5173",                  // dev Vite
+      "http://localhost:3000",                  // dev alternativo
+      "https://blog.marck0101.com.br",          // domínio principal do blog (frontend)
+      "https://www.blog.marck0101.com.br",      // variante com www, se existir
+      "*"                                       // temporário para testes (depois remova)
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,                            // já adicionado, mantém
   })
 );
 
