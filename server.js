@@ -16,14 +16,20 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",             // dev Vite
-      "http://localhost:3000",             // dev alternativo
-      "https://blog.marck0101.com.br",     // frontend prod
-      "https://www.blog.marck0101.com.br", // frontend prod (www)
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: (origin, callback) => {
+      const allowed = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://blog.marck0101.com.br",
+        "https://www.blog.marck0101.com.br",
+      ];
+
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
