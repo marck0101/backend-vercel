@@ -21,6 +21,26 @@ app.use(
   })
 );
 
+app.get('/api/posts', async (req, res) => {
+  try {
+    const db = await getDb();
+    const posts = await db.collection('blogposts')
+      .find({ published: true, deletedAt: null })
+      .sort({ publishedAt: -1 })
+      .limit(50) // ← limite para evitar overload em serverless
+      .toArray();
+
+    console.log(`→ Retornados ${posts.length} posts`);
+    res.json(posts);
+  } catch (error) {
+    console.error('Erro em GET /api/posts:', error.message || error);
+    res.status(500).json({
+      error: 'Erro interno ao buscar posts',
+      message: error.message,
+    });
+  }
+});
+
 /* ================= HEALTH ================= */
 app.get("/status", (req, res) => {
   res.json({
@@ -34,9 +54,10 @@ app.use("/api/posts", postsRoutes);
 
 // NÃO COLOQUE app.listen() aqui em produção!
 // Coloque condicionado só para desenvolvimento local
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3333;
   app.listen(PORT, () => {
-    console.log(`🚀 API rodando em http://localhost:${PORT}`);
+    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
   });
 }
 

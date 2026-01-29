@@ -15,9 +15,7 @@ export async function createPost(req, res) {
     const payload = buildPostPayload(req.body);
 
     if (!payload.title || !payload.slug || !payload.content) {
-      return res.status(400).json({
-        error: "Título, slug e conteúdo são obrigatórios",
-      });
+      return res.status(400).json({ error: "Título, slug e conteúdo são obrigatórios" });
     }
 
     const exists = await db.collection("blogposts").findOne({
@@ -30,14 +28,18 @@ export async function createPost(req, res) {
     }
 
     const result = await db.collection("blogposts").insertOne(payload);
+    console.log(`→ Post criado: ID ${result.insertedId}`);
 
     return res.status(201).json({
       success: true,
       postId: result.insertedId,
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro ao criar post" });
+    console.error('Erro em createPost:', err.message || err);
+    return res.status(500).json({
+      error: "Erro ao criar post",
+      details: err.message
+    });
   }
 }
 
@@ -47,17 +49,23 @@ export async function createPost(req, res) {
 export async function getAllPosts(req, res) {
   try {
     const db = await getDb();
+    console.log('→ Buscando posts publicados...');
 
     const posts = await db
       .collection("blogposts")
       .find({ published: true, deletedAt: null })
       .sort({ publishedAt: -1 })
+      .limit(50) // segurança
       .toArray();
 
+    console.log(`→ Encontrados ${posts.length} posts`);
     return res.status(200).json(posts);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erro ao buscar posts" });
+    console.error('Erro em getAllPosts:', err.message || err);
+    return res.status(500).json({
+      error: "Erro ao buscar posts",
+      details: err.message
+    });
   }
 }
 
