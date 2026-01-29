@@ -9,22 +9,22 @@ import {
 const router = express.Router();
 
 /**
- * GET /posts
+ * GET /api/posts (lista todos os posts publicados)
  */
 router.get("/", getAllPosts);
 
 /**
- * POST /posts
+ * POST /api/posts (cria um novo post)
  */
 router.post("/", createPost);
 
 /**
- * ROTAS ESPECÍFICAS PRIMEIRO
+ * GET /api/posts/slug/:slug (busca por slug)
  */
 router.get("/slug/:slug", getPostBySlug);
 
 /**
- * ROTA GENÉRICA POR ÚLTIMO
+ * GET /api/posts/:id (busca por ID)
  */
 router.get("/:id", getPostById);
 
