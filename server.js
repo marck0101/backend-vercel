@@ -21,6 +21,15 @@ app.use(
   })
 );
 
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Rota de teste sem DB funcionando', 
+    env: process.env.NODE_ENV,
+    uri_defined: !!process.env.MONGODB_URI 
+  });
+});
+
 app.get('/api/posts', async (req, res) => {
   try {
     const db = await getDb();
@@ -61,14 +70,7 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'Rota de teste sem DB funcionando', 
-    env: process.env.NODE_ENV,
-    uri_defined: !!process.env.MONGODB_URI 
-  });
-});
+
 
 // <--- ESSA LINHA É A MAIS IMPORTANTE DE TODAS -->
 export default app;
