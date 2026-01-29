@@ -14,25 +14,17 @@ const app = express();
 
 app.use(express.json());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowed = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://blog.marck0101.com.br",
-        "https://www.blog.marck0101.com.br",
-      ];
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://blog.marck0101.com.br");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-      if (!origin || allowed.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 // Preflight para todas as rotas (IMPORTANTE no Vercel)
 app.options("*", cors());
