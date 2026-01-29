@@ -1,33 +1,75 @@
 import express from "express";
-import cors from "cors";
 import "dotenv/config";
 
-// Import rotas
+// Rotas
 import postsRoutes from "./routes/posts.js";
-
-// Import getDb
-import { getDb } from "./lib/mongodb.js";
 
 const app = express();
 
-/* ================= MIDDLEWARES ================= */
+/**
+ * === DEFINITIVO PARA VERCEL + CORS ===
+ * - Remove 304 (ETag off)
+ * - Força CORS em TODAS as respostas
+ * - Vary: Origin (evita cache quebrar CORS)
+ * - Cache-Control: no-store (evita edge/browser devolver 304 sem headers)
+ */
+
+app.set("etag", false); // impede 304 Not Modified
 
 app.use(express.json());
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://blog.marck0101.com.br");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+// Lista de origens permitidas
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://blog.marck0101.com.br",
+  "https://www.blog.marck0101.com.br",
+]);
 
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
+function getAllowedOrigin(origin) {
+  // Se não houver Origin (curl/navegador abrindo direto), não bloqueia.
+  if (!origin) return "https://blog.marck0101.com.br";
+  if (ALLOWED_ORIGINS.has(origin)) return origin;
+  return null;
+}
+
+// Middleware CORS + anti-cache (ANTES de tudo)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigin = getAllowedOrigin(origin);
+
+  // Sempre variar por Origin para cache não “misturar” headers
+  res.setHeader("Vary", "Origin");
+
+  // Anti-cache agressivo para impedir 304/caching no caminho
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+
+  if (allowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
+
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  // Preflight sempre responde aqui (não deixa cair em rota/cors lib)
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  // Se veio Origin e não está permitido, bloqueia explicitamente
+  if (origin && !allowedOrigin) {
+    return res.status(403).json({
+      error: "CORS blocked",
+      origin,
+    });
+  }
+
   next();
 });
-
-// Preflight para todas as rotas (IMPORTANTE no Vercel)
-app.options("*", cors());
 
 /* ================= HEALTHCHECK ================= */
 
@@ -50,7 +92,7 @@ app.get("/status", (req, res) => {
 
 /* ================= ROTAS ================= */
 
-// TODAS as rotas de posts ficam no router
+// IMPORTANTE: mantendo /posts (como você já estava usando)
 app.use("/posts", postsRoutes);
 
 /* ================= SERVER LOCAL ================= */
@@ -58,9 +100,8 @@ app.use("/posts", postsRoutes);
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 3333;
   app.listen(PORT, () => {
-    console.log(`🚀 API rodando em http://localhost:${PORT}`);
+    console.log(`API rodando em http://localhost:${PORT}`);
   });
 }
 
-// OBRIGATÓRIO PARA VERCEL
 export default app;
