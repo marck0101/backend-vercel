@@ -2,10 +2,13 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 
+// Import rotas
 import postsRoutes from "./routes/posts.js";
 
+// Import getDb (ESSA LINHA RESOLVE O ERRO "getDb is not defined")
+import { getDb } from "./lib/mongodb.js";
+
 const app = express();
-const PORT = process.env.PORT || 3333;   // ← isso o Vercel já fornece
 
 /* ================= MIDDLEWARES ================= */
 app.use(express.json());
@@ -16,27 +19,39 @@ app.use(
       "http://localhost:5173",
       "http://localhost:3000",
       "https://blog.marck0101.com.br",
-      "*"   // ← opcional durante testes (depois tira)
+      "*" // temporário para testes; remova depois se quiser
     ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+/* ================= ROTAS DE TESTE E HEALTH ================= */
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'Rota de teste sem DB funcionando', 
-    env: process.env.NODE_ENV,
-    uri_defined: !!process.env.MONGODB_URI 
+  res.json({
+    status: 'ok',
+    message: 'Rota de teste sem DB funcionando',
+    env: process.env.NODE_ENV || 'unknown',
+    uri_defined: !!process.env.MONGODB_URI,
+    timestamp: new Date().toISOString()
   });
 });
 
+app.get("/status", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/* ================= ROTA /api/posts (agora com getDb importado) ================= */
 app.get('/api/posts', async (req, res) => {
   try {
-    const db = await getDb();
+    const db = await getDb(); // ← agora getDb está definido
     const posts = await db.collection('blogposts')
       .find({ published: true, deletedAt: null })
       .sort({ publishedAt: -1 })
-      .limit(50) // ← limite para evitar overload em serverless
+      .limit(50)
       .toArray();
 
     console.log(`→ Retornados ${posts.length} posts`);
@@ -50,27 +65,16 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-/* ================= HEALTH ================= */
-app.get("/status", (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-/* ================= API ================= */
+/* ================= API PRINCIPAL ================= */
 app.use("/api/posts", postsRoutes);
 
-// NÃO COLOQUE app.listen() aqui em produção!
-// Coloque condicionado só para desenvolvimento local
+/* ================= NÃO LIGAR LISTEN EM PRODUÇÃO ================= */
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3333;
   app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`🚀 API rodando em http://localhost:${PORT}`);
   });
 }
 
-
-
-// <--- ESSA LINHA É A MAIS IMPORTANTE DE TODAS -->
+// ESSA LINHA É OBRIGATÓRIA PARA O VERCEL
 export default app;
