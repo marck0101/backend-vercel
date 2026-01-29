@@ -39,7 +39,7 @@ app.options("*", cors());
 
 /* ================= HEALTHCHECK ================= */
 
-app.get("/api/test", (req, res) => {
+app.get("/test", (req, res) => {
   res.json({
     status: "ok",
     message: "API funcionando",
@@ -59,7 +59,7 @@ app.get("/status", (req, res) => {
 /* ================= ROTAS ================= */
 
 // TODAS as rotas de posts ficam no router
-app.use("/api/posts", postsRoutes);
+app.use("/posts", postsRoutes);
 
 /* ================= SERVER LOCAL ================= */
 
